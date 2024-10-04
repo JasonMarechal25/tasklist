@@ -1,5 +1,3 @@
-use std::cell::Cell;
-
 fn main() {
     println!("Hello, world!");
 }
@@ -10,18 +8,29 @@ struct Task {
 }
 
 struct TaskRepository {
-    next_id: Cell<i32>,
+    tasks: Vec<Task>,
+    last_id: i32,
 }
 
 impl Default for TaskRepository {
     fn default() -> Self {
-        TaskRepository { next_id: Cell::new(1), }
+        TaskRepository {
+            tasks: vec![],
+            last_id: 0,
+        }
     }
 }
 
 impl TaskRepository {
-    fn new_task(&self, description: String) -> Task {
-        return Task { description: description, id: self.next_id.replace(self.next_id.get()+1) };
+    fn new_task(&mut self, description: String) -> &Task {
+        self.last_id += 1;
+        let task = Task { description: description, id: self.last_id };
+        self.tasks.push(task);
+        return self.tasks.last().unwrap();
+    }
+
+    fn tasks(&self) -> &Vec<Task> {
+        return &self.tasks;
     }
 }
 
@@ -31,7 +40,7 @@ mod tests {
 
     #[test]
     fn task_added() {
-        let task_repository = TaskRepository::default();
+        let mut task_repository = TaskRepository::default();
         let task = task_repository.new_task(String::from("TestTask"));
         assert_eq!(task.description, "TestTask");
         assert_eq!(task.id, 1);
@@ -39,10 +48,18 @@ mod tests {
 
     #[test]
     fn task_id_incremental() {
-        let task_repository = TaskRepository::default();
-        let task = task_repository.new_task(String::from("TestTask"));
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task(String::from("TestTask"));
         let task2 = task_repository.new_task(String::from("otherTask"));
         assert_eq!(task2.description, "otherTask");
         assert_eq!(task2.id, 2);
+    }
+
+    #[test]
+    fn list_task() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task(String::from("TestTask"));
+        task_repository.new_task(String::from("otherTask"));
+        assert_eq!(task_repository.tasks().len(), 2);
     }
 }
