@@ -1,5 +1,8 @@
 fn main() {
     println!("Hello, world!");
+    let mut task_repository = TaskRepository::default();
+    task_repository.new_task(String::from("TestTask"));
+    task_repository.new_task(String::from("otherTask"));
 }
 
 struct Task {
@@ -31,6 +34,12 @@ impl TaskRepository {
 
     fn tasks(&self) -> &Vec<Task> {
         return &self.tasks;
+    }
+}
+
+fn print_tasks(repository: &TaskRepository) {
+    for task in repository.tasks() {
+        println!("{}", task.description)
     }
 }
 
