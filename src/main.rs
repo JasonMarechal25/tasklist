@@ -1,8 +1,20 @@
-fn main() {
+use std::env;
+use std::process::ExitCode;
+
+fn main() -> ExitCode {
     println!("Hello, world!");
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        println!("No command provided, goodbye.");
+        return ExitCode::from(0)
+    }
     let mut task_repository = TaskRepository::default();
-    task_repository.new_task(String::from("TestTask"));
-    task_repository.new_task(String::from("otherTask"));
+    let param1 = &args[1];
+    match param1.as_str() {
+        "list" => { print_tasks(&task_repository); }
+        _ => { println!("Unknown parameter {}", param1) }
+    }
+    ExitCode::from(0)
 }
 
 struct Task {
