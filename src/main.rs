@@ -2,7 +2,8 @@ use std::env;
 use std::process::ExitCode;
 use std::fs;
 use std::io::Write;
-use std::fmt;
+use jzon;
+use jzon::JsonValue;
 
 fn main() -> ExitCode {
     println!("Hello, world!");
@@ -28,15 +29,37 @@ fn main() -> ExitCode {
     ExitCode::from(0)
 }
 
+#[derive(PartialEq)]
+#[derive(Debug)]
+#[derive(Clone)]
 struct Task {
     description: String,
     id: i32,
 }
 
+impl Into<jzon::JsonValue> for Task {
+    fn into(self) -> jzon::JsonValue {
+        jzon::object! {
+            id: self.id,
+            description: self.description
+        }
+    }
+}
+
+#[derive(Clone)]
 struct TaskRepository {
     tasks: Vec<Task>,
     last_id: i32,
 }
+
+impl Into<jzon::JsonValue> for TaskRepository {
+    fn into(self) -> jzon::JsonValue {
+        jzon::object! {
+            tasks: self.tasks
+        }
+    }
+}
+
 
 impl Default for TaskRepository {
     fn default() -> Self {
@@ -48,22 +71,22 @@ impl Default for TaskRepository {
 }
 
 impl TaskRepository {
+    fn from_content(content: String) -> Self {
+        let task_repository = TaskRepository::default();
+        println!("{}", content);
+        let parsed = jzon::parse(&content).unwrap();
+
+        task_repository
+    }
+
     fn new_task(&mut self, description: String) -> &Task {
         self.last_id += 1;
         let task = Task { description: description, id: self.last_id };
         self.tasks.push(task);
         let mut list_file = fs::File::create("task_list.txt").unwrap();
-        list_file.write(b"{\n\t\"task\":[\n");
-        for task in &self.tasks {
-            list_file.write(format!("\
-            \t\t{{\n\
-            \t\t\t\"id\": \"{id}\",\n\
-            \t\t\t\"description\": \"{desc}\"\n\
-            \t\t}},",
-                                    id=task.id, desc=task.description).as_bytes());
-        }
-        list_file.write(b"\n\t}\n}");
-
+        list_file.write(
+        <TaskRepository as Into<JsonValue>>::into(self.clone()).to_string().to_string().as_bytes()
+        ).unwrap();
         return self.tasks.last().unwrap();
     }
 
@@ -106,4 +129,28 @@ mod tests {
         task_repository.new_task(String::from("otherTask"));
         assert_eq!(task_repository.tasks().len(), 2);
     }
+
+    #[test]
+    fn repository_load_json() {
+        let expected = vec![
+            Task{id:0, description:String::from("plop")},
+            Task{id:1, description:String::from("plap")}
+        ];
+        let task_repository = TaskRepository::from_content(format!("\
+        {{\
+        \"task\": [\
+            {{\
+                \"id\": 0,\
+                \"description\": \"plop\"\
+            }},\
+            {{\
+                \"id\": 1,\
+                \"description\": \"plap\"\
+            }}\
+        ]\
+        }}\
+        "));
+        assert_eq!(expected, expected);
+    }
+
 }
