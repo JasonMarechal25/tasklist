@@ -12,8 +12,16 @@ fn main() -> ExitCode {
     let param1 = &args[1];
     match param1.as_str() {
         "list" => { print_tasks(&task_repository); }
+        "add" => {
+            if args.len() < 3 {
+                println!("Missing description to add a new task");
+                return ExitCode::from(1)
+            }
+            task_repository.new_task(args[2].clone());
+        }
         _ => { println!("Unknown parameter {}", param1) }
     }
+    print_tasks(&task_repository);
     ExitCode::from(0)
 }
 
