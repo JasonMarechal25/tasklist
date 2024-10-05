@@ -1,3 +1,4 @@
+use std::cmp::max_by;
 use std::env;
 use std::process::ExitCode;
 use std::fs;
@@ -60,6 +61,15 @@ impl Into<jzon::JsonValue> for TaskRepository {
     }
 }
 
+impl From<JsonValue> for TaskRepository {
+    fn from(value: JsonValue) -> Self {
+        let tasks_value = value["tasks"];
+        let tasks: Vec<Task> = From::<JsonValue>::from(tasks_value);
+        let max_id = tasks.iter().max_by_key(|task| task.id).map_or_else(|task| task.id, 0);
+        TaskRepository { tasks: tasks, last_id: max_id}
+    }
+}
+
 
 impl Default for TaskRepository {
     fn default() -> Self {
@@ -75,8 +85,7 @@ impl TaskRepository {
         let task_repository = TaskRepository::default();
         println!("{}", content);
         let parsed = jzon::parse(&content).unwrap();
-
-        task_repository
+        <JsonValue as Into<TaskRepository>>::into(parsed)
     }
 
     fn new_task(&mut self, description: String) -> &Task {
