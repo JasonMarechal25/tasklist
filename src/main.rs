@@ -1,5 +1,8 @@
 use std::env;
 use std::process::ExitCode;
+use std::fs;
+use std::io::Write;
+use std::fmt;
 
 fn main() -> ExitCode {
     println!("Hello, world!");
@@ -49,6 +52,18 @@ impl TaskRepository {
         self.last_id += 1;
         let task = Task { description: description, id: self.last_id };
         self.tasks.push(task);
+        let mut list_file = fs::File::create("task_list.txt").unwrap();
+        list_file.write(b"{\n\t\"task\":[\n");
+        for task in &self.tasks {
+            list_file.write(format!("\
+            \t\t{{\n\
+            \t\t\t\"id\": \"{id}\",\n\
+            \t\t\t\"description\": \"{desc}\"\n\
+            \t\t}},",
+                                    id=task.id, desc=task.description).as_bytes());
+        }
+        list_file.write(b"\n\t}\n}");
+
         return self.tasks.last().unwrap();
     }
 
