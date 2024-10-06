@@ -1,7 +1,7 @@
 use std::env;
 use std::process::ExitCode;
 use std::fs;
-use std::io::Write;
+use std::io::{BufReader, Write};
 use serde::{Serialize, Deserialize};
 
 fn main() -> ExitCode {
@@ -11,7 +11,10 @@ fn main() -> ExitCode {
         println!("No command provided, goodbye.");
         return ExitCode::from(0)
     }
-    let mut task_repository = TaskRepository::default();
+    let file = fs::File::open("task_list.txt").unwrap();
+    let reader = BufReader::new(file);
+    let mut task_repository: TaskRepository = serde_json::from_reader(reader).unwrap();
+    print_tasks(&task_repository);
     let param1 = &args[1];
     match param1.as_str() {
         "list" => { print_tasks(&task_repository); }
