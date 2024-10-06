@@ -33,8 +33,8 @@ fn main() -> ExitCode {
 #[derive(Clone)]
 #[derive(Serialize, Deserialize)]
 struct Task {
-    description: String,
     id: i32,
+    description: String,
 }
 
 #[derive(Clone)]
@@ -135,4 +135,24 @@ mod tests {
         assert_eq!(expected, expected);
     }
 
+    #[test]
+    fn repository_dump_json() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task("Plop".to_string());
+        task_repository.new_task("Plip".to_string());
+        let dump = serde_json::to_string(&task_repository).unwrap();
+        assert_eq!(dump, String::from("{\
+        \"tasks\":[\
+            {\
+                \"id\":1,\
+                \"description\":\"Plop\"\
+            },\
+            {\
+                \"id\":2,\
+                \"description\":\"Plip\"\
+            }\
+        ],\
+        \"last_id\":2\
+        }"))
+    }
 }
