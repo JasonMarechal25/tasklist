@@ -1,10 +1,8 @@
-use std::cmp::max_by;
 use std::env;
 use std::process::ExitCode;
 use std::fs;
 use std::io::Write;
-use jzon;
-use jzon::JsonValue;
+use serde::{Serialize, Deserialize};
 
 fn main() -> ExitCode {
     println!("Hello, world!");
@@ -33,43 +31,18 @@ fn main() -> ExitCode {
 #[derive(PartialEq)]
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 struct Task {
     description: String,
     id: i32,
 }
 
-impl Into<jzon::JsonValue> for Task {
-    fn into(self) -> jzon::JsonValue {
-        jzon::object! {
-            id: self.id,
-            description: self.description
-        }
-    }
-}
-
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 struct TaskRepository {
     tasks: Vec<Task>,
     last_id: i32,
 }
-
-impl Into<jzon::JsonValue> for TaskRepository {
-    fn into(self) -> jzon::JsonValue {
-        jzon::object! {
-            tasks: self.tasks
-        }
-    }
-}
-
-impl From<JsonValue> for TaskRepository {
-    fn from(value: JsonValue) -> Self {
-        let tasks_value = value["tasks"];
-        let tasks: Vec<Task> = From::<JsonValue>::from(tasks_value);
-        let max_id = tasks.iter().max_by_key(|task| task.id).map_or_else(|task| task.id, 0);
-        TaskRepository { tasks: tasks, last_id: max_id}
-    }
-}
-
 
 impl Default for TaskRepository {
     fn default() -> Self {
@@ -84,8 +57,8 @@ impl TaskRepository {
     fn from_content(content: String) -> Self {
         let task_repository = TaskRepository::default();
         println!("{}", content);
-        let parsed = jzon::parse(&content).unwrap();
-        <JsonValue as Into<TaskRepository>>::into(parsed)
+        let parsed: TaskRepository = serde_json::from_str(&content).unwrap();
+        parsed
     }
 
     fn new_task(&mut self, description: String) -> &Task {
@@ -94,8 +67,7 @@ impl TaskRepository {
         self.tasks.push(task);
         let mut list_file = fs::File::create("task_list.txt").unwrap();
         list_file.write(
-        <TaskRepository as Into<JsonValue>>::into(self.clone()).to_string().to_string().as_bytes()
-        ).unwrap();
+        serde_json::to_string(&self).unwrap().as_bytes());
         return self.tasks.last().unwrap();
     }
 
@@ -147,7 +119,7 @@ mod tests {
         ];
         let task_repository = TaskRepository::from_content(format!("\
         {{\
-        \"task\": [\
+        \"tasks\": [\
             {{\
                 \"id\": 0,\
                 \"description\": \"plop\"\
@@ -156,7 +128,8 @@ mod tests {
                 \"id\": 1,\
                 \"description\": \"plap\"\
             }}\
-        ]\
+        ],\
+        \"last_id\": 1\
         }}\
         "));
         assert_eq!(expected, expected);
