@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::process::ExitCode;
 use std::fs;
@@ -13,7 +14,8 @@ fn main() -> ExitCode {
     }
     let file = fs::File::open("task_list.txt").unwrap();
     let reader = BufReader::new(file);
-    let mut task_repository: TaskRepository = serde_json::from_reader(reader).unwrap();
+    let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
+    let mut task_repository = TaskRepository::from_serialization(repo_object);
     print_tasks(&task_repository);
     let param1 = &args[1];
     match param1.as_str() {
@@ -41,16 +43,20 @@ struct Task {
 }
 
 #[derive(Clone)]
-#[derive(Serialize, Deserialize)]
 struct TaskRepository {
-    tasks: Vec<Task>,
+    tasks: HashMap<i32, Task>,
     last_id: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct TaskRepositoryForSerialization {
+    tasks: Vec<Task>,
 }
 
 impl Default for TaskRepository {
     fn default() -> Self {
         TaskRepository {
-            tasks: vec![],
+            tasks: HashMap::new(),
             last_id: 0,
         }
     }
@@ -59,29 +65,41 @@ impl Default for TaskRepository {
 impl TaskRepository {
     fn from_content(content: String) -> Self {
         let task_repository = TaskRepository::default();
-        println!("{}", content);
-        let parsed: TaskRepository = serde_json::from_str(&content).unwrap();
-        parsed
+        let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
+        Self::from_serialization(object)
+    }
+
+    fn from_serialization(object: TaskRepositoryForSerialization) -> Self {
+        let mut task_repository = TaskRepository::default();
+        let mut max_id = 0;
+        for task in object.tasks {
+            if task.id > max_id { max_id = task.id}
+            task_repository.tasks.insert(task.id, task);
+        }
+        task_repository.last_id = max_id;
+        task_repository
     }
 
     fn new_task(&mut self, description: String) -> &Task {
         self.last_id += 1;
         let task = Task { description: description, id: self.last_id };
-        self.tasks.push(task);
+        self.tasks.insert(self.last_id, task);
         let mut list_file = fs::File::create("task_list.txt").unwrap();
-        list_file.write(
-        serde_json::to_string(&self).unwrap().as_bytes());
-        return self.tasks.last().unwrap();
+        let _ = list_file.write(
+        serde_json::to_string(&self.serializable()).unwrap().as_bytes());
+        &self.tasks[&self.last_id]
     }
 
-    fn tasks(&self) -> &Vec<Task> {
-        return &self.tasks;
+    fn serializable(&self) -> TaskRepositoryForSerialization {
+        let mut vec: Vec<Task> = self.tasks.values().cloned().collect();
+        vec.sort_by(|a, b| a.id.cmp(&b.id));
+        TaskRepositoryForSerialization { tasks: vec }
     }
 }
 
 fn print_tasks(repository: &TaskRepository) {
-    for task in repository.tasks() {
-        println!("{}", task.description)
+    for (id, task) in &repository.tasks {
+        println!("Task {}: {}", task.id, task.description)
     }
 }
 
@@ -111,7 +129,7 @@ mod tests {
         let mut task_repository = TaskRepository::default();
         task_repository.new_task(String::from("TestTask"));
         task_repository.new_task(String::from("otherTask"));
-        assert_eq!(task_repository.tasks().len(), 2);
+        assert_eq!(task_repository.tasks.len(), 2);
     }
 
     #[test]
@@ -131,8 +149,7 @@ mod tests {
                 \"id\": 1,\
                 \"description\": \"plap\"\
             }}\
-        ],\
-        \"last_id\": 1\
+        ]\
         }}\
         "));
         assert_eq!(expected, expected);
@@ -143,7 +160,7 @@ mod tests {
         let mut task_repository = TaskRepository::default();
         task_repository.new_task("Plop".to_string());
         task_repository.new_task("Plip".to_string());
-        let dump = serde_json::to_string(&task_repository).unwrap();
+        let dump = serde_json::to_string(&task_repository.serializable()).unwrap();
         assert_eq!(dump, String::from("{\
         \"tasks\":[\
             {\
@@ -154,8 +171,7 @@ mod tests {
                 \"id\":2,\
                 \"description\":\"Plip\"\
             }\
-        ],\
-        \"last_id\":2\
+        ]\
         }"))
     }
 }
