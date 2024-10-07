@@ -95,6 +95,10 @@ impl TaskRepository {
         vec.sort_by(|a, b| a.id.cmp(&b.id));
         TaskRepositoryForSerialization { tasks: vec }
     }
+
+    fn delete(&mut self, id: i32) -> Option<Task> {
+        self.tasks.remove(&id)
+    }
 }
 
 fn print_tasks(repository: &TaskRepository) {
@@ -173,5 +177,15 @@ mod tests {
             }\
         ]\
         }"))
+    }
+
+    #[test]
+    fn delete_task() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task("Plop".to_string());
+        task_repository.new_task("Plip".to_string());
+        task_repository.delete(1);
+        assert_eq!(task_repository.tasks.len(), 1);
+        assert_eq!(task_repository.tasks[&2], Task {id: 2, description: String::from("Plip")});
     }
 }
