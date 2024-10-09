@@ -10,7 +10,7 @@ fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("No command provided, goodbye.");
-        return ExitCode::from(0)
+        return ExitCode::from(0);
     }
     let file = fs::File::open("task_list.txt").unwrap();
     let reader = BufReader::new(file);
@@ -23,9 +23,16 @@ fn main() -> ExitCode {
         "add" => {
             if args.len() < 3 {
                 println!("Missing description to add a new task");
-                return ExitCode::from(1)
+                return ExitCode::from(1);
             }
             task_repository.new_task(args[2].clone());
+        }
+        "delete" => {
+            if args.len() < 3 {
+                println!("Missing id of task to delete");
+                return ExitCode::from(1);
+            }
+            task_repository.delete(args[2].clone().parse::<i32>().unwrap());
         }
         _ => { println!("Unknown parameter {}", param1) }
     }
@@ -73,7 +80,7 @@ impl TaskRepository {
         let mut task_repository = TaskRepository::default();
         let mut max_id = 0;
         for task in object.tasks {
-            if task.id > max_id { max_id = task.id}
+            if task.id > max_id { max_id = task.id }
             task_repository.tasks.insert(task.id, task);
         }
         task_repository.last_id = max_id;
@@ -86,7 +93,7 @@ impl TaskRepository {
         self.tasks.insert(self.last_id, task);
         let mut list_file = fs::File::create("task_list.txt").unwrap();
         let _ = list_file.write(
-        serde_json::to_string(&self.serializable()).unwrap().as_bytes());
+            serde_json::to_string(&self.serializable()).unwrap().as_bytes());
         &self.tasks[&self.last_id]
     }
 
@@ -97,7 +104,11 @@ impl TaskRepository {
     }
 
     fn delete(&mut self, id: i32) -> Option<Task> {
-        self.tasks.remove(&id)
+        let ret = self.tasks.remove(&id);
+        let mut list_file = fs::File::create("task_list.txt").unwrap();
+        let _ = list_file.write(
+            serde_json::to_string(&self.serializable()).unwrap().as_bytes());
+        ret
     }
 }
 
@@ -139,8 +150,8 @@ mod tests {
     #[test]
     fn repository_load_json() {
         let expected = vec![
-            Task{id:0, description:String::from("plop")},
-            Task{id:1, description:String::from("plap")}
+            Task { id: 0, description: String::from("plop") },
+            Task { id: 1, description: String::from("plap") }
         ];
         let task_repository = TaskRepository::from_content(format!("\
         {{\
@@ -186,6 +197,6 @@ mod tests {
         task_repository.new_task("Plip".to_string());
         task_repository.delete(1);
         assert_eq!(task_repository.tasks.len(), 1);
-        assert_eq!(task_repository.tasks[&2], Task {id: 2, description: String::from("Plip")});
+        assert_eq!(task_repository.tasks[&2], Task { id: 2, description: String::from("Plip") });
     }
 }
