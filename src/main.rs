@@ -71,7 +71,6 @@ impl Default for TaskRepository {
 
 impl TaskRepository {
     fn from_content(content: String) -> Self {
-        let task_repository = TaskRepository::default();
         let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
         Self::from_serialization(object)
     }
@@ -113,9 +112,13 @@ impl TaskRepository {
 }
 
 fn print_tasks(repository: &TaskRepository) {
-    for (id, task) in &repository.tasks {
+    for (_, task) in &repository.tasks {
         println!("Task {}: {}", task.id, task.description)
     }
+}
+
+fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
+    repo.tasks.get_mut(&id).unwrap().description = new_desc;
 }
 
 #[cfg(test)]
@@ -149,10 +152,10 @@ mod tests {
 
     #[test]
     fn repository_load_json() {
-        let expected = vec![
-            Task { id: 0, description: String::from("plop") },
-            Task { id: 1, description: String::from("plap") }
-        ];
+        let expected = HashMap::from([
+            (0, Task { id: 0, description: String::from("plop") }),
+            (1, Task { id: 1, description: String::from("plap") })
+        ]);
         let task_repository = TaskRepository::from_content(format!("\
         {{\
         \"tasks\": [\
@@ -167,7 +170,7 @@ mod tests {
         ]\
         }}\
         "));
-        assert_eq!(expected, expected);
+        assert_eq!(expected, task_repository.tasks);
     }
 
     #[test]
@@ -198,5 +201,14 @@ mod tests {
         task_repository.delete(1);
         assert_eq!(task_repository.tasks.len(), 1);
         assert_eq!(task_repository.tasks[&2], Task { id: 2, description: String::from("Plip") });
+    }
+
+    #[test]
+    fn update_task_with_desc_by_id() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task("Plop".to_string());
+        task_repository.new_task("Plip".to_string());
+        update_task(&mut task_repository, 2, "New desc".to_string());
+        assert_eq!(task_repository.tasks[&2].description, "New desc");
     }
 }
