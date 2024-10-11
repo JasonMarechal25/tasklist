@@ -48,9 +48,20 @@ fn main() -> ExitCode {
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(Serialize, Deserialize)]
+enum TaskStatus {
+    Todo,
+    InProgress,
+    Done,
+}
+
+#[derive(PartialEq)]
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 struct Task {
     id: i32,
     description: String,
+    status: TaskStatus,
 }
 
 #[derive(Clone)]
@@ -92,7 +103,7 @@ impl TaskRepository {
 
     fn new_task(&mut self, description: String) -> &Task {
         self.last_id += 1;
-        let task = Task { description: description, id: self.last_id };
+        let task = Task { description: description, id: self.last_id, status: TaskStatus::Todo };
         self.tasks.insert(self.last_id, task);
         let mut list_file = fs::File::create("task_list.txt").unwrap();
         let _ = list_file.write(
@@ -157,19 +168,21 @@ mod tests {
     #[test]
     fn repository_load_json() {
         let expected = HashMap::from([
-            (0, Task { id: 0, description: String::from("plop") }),
-            (1, Task { id: 1, description: String::from("plap") })
+            (0, Task { id: 0, description: String::from("plop"), status: TaskStatus::Todo }),
+            (1, Task { id: 1, description: String::from("plap"), status: TaskStatus::Done })
         ]);
         let task_repository = TaskRepository::from_content(format!("\
         {{\
         \"tasks\": [\
             {{\
                 \"id\": 0,\
-                \"description\": \"plop\"\
+                \"description\": \"plop\",\
+                \"status\": \"Todo\"\
             }},\
             {{\
                 \"id\": 1,\
-                \"description\": \"plap\"\
+                \"description\": \"plap\",\
+                \"status\": \"Done\"\
             }}\
         ]\
         }}\
@@ -187,11 +200,13 @@ mod tests {
         \"tasks\":[\
             {\
                 \"id\":1,\
-                \"description\":\"Plop\"\
+                \"description\":\"Plop\",\
+                \"status\":\"Todo\"\
             },\
             {\
                 \"id\":2,\
-                \"description\":\"Plip\"\
+                \"description\":\"Plip\",\
+                \"status\":\"Todo\"\
             }\
         ]\
         }"))
@@ -204,7 +219,7 @@ mod tests {
         task_repository.new_task("Plip".to_string());
         task_repository.delete(1);
         assert_eq!(task_repository.tasks.len(), 1);
-        assert_eq!(task_repository.tasks[&2], Task { id: 2, description: String::from("Plip") });
+        assert_eq!(task_repository.tasks[&2], Task { id: 2, description: String::from("Plip"), status: TaskStatus::Todo });
     }
 
     #[test]
