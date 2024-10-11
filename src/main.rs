@@ -6,7 +6,6 @@ use std::io::{BufReader, Write};
 use serde::{Serialize, Deserialize};
 
 fn main() -> ExitCode {
-    println!("Hello, world!");
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("No command provided, goodbye.");
@@ -16,7 +15,6 @@ fn main() -> ExitCode {
     let reader = BufReader::new(file);
     let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
     let mut task_repository = TaskRepository::from_serialization(repo_object);
-    print_tasks(&task_repository);
     let param1 = &args[1];
     match param1.as_str() {
         "list" => { print_tasks(&task_repository); }
@@ -34,9 +32,15 @@ fn main() -> ExitCode {
             }
             task_repository.delete(args[2].clone().parse::<i32>().unwrap());
         }
+        "update" => {
+            if args.len() < 4 {
+                println!("Missing update parameters");
+                return ExitCode::from(1);
+            }
+            update_task(&mut task_repository, args[2].clone().parse::<i32>().unwrap(), args[3].clone());
+        }
         _ => { println!("Unknown parameter {}", param1) }
     }
-    print_tasks(&task_repository);
     ExitCode::from(0)
 }
 
