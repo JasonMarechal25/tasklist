@@ -136,6 +136,10 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     repo.tasks.get_mut(&id).unwrap().description = new_desc;
 }
 
+fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
+    repo.tasks.get_mut(&id).unwrap().status = TaskStatus::InProgress;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,5 +233,13 @@ mod tests {
         task_repository.new_task("Plip".to_string());
         update_task(&mut task_repository, 2, "New desc".to_string());
         assert_eq!(task_repository.tasks[&2].description, "New desc");
+    }
+
+    #[test]
+    fn update_inprogress() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task("Plop".to_string());
+        mark_in_progress(&mut task_repository, 1);
+        assert_eq!(task_repository.tasks[&1].status, TaskStatus::InProgress);
     }
 }
