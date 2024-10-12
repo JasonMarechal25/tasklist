@@ -4,6 +4,7 @@ use std::process::ExitCode;
 use std::fs;
 use std::io::{BufReader, Write};
 use serde::{Serialize, Deserialize};
+use std::fmt::{Display, Formatter};
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -39,6 +40,13 @@ fn main() -> ExitCode {
             }
             update_task(&mut task_repository, args[2].clone().parse::<i32>().unwrap(), args[3].clone());
         }
+        "mark-in-progress" => {
+            if args.len() < 3 {
+                println!("Missing id of task to progress");
+                return ExitCode::from(1);
+            }
+            mark_in_progress(&mut task_repository, args[2].clone().parse::<i32>().unwrap());
+        }
         _ => { println!("Unknown parameter {}", param1) }
     }
     ExitCode::from(0)
@@ -52,6 +60,16 @@ enum TaskStatus {
     Todo,
     InProgress,
     Done,
+}
+
+impl Display for TaskStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            TaskStatus::Todo => write!(f, "Todo"),
+            TaskStatus::InProgress => write!(f, "In Progress"),
+            TaskStatus::Done => write!(f, "Done"),
+        }
+    }
 }
 
 #[derive(PartialEq)]
@@ -128,7 +146,7 @@ impl TaskRepository {
 
 fn print_tasks(repository: &TaskRepository) {
     for (_, task) in &repository.tasks {
-        println!("Task {}: {}", task.id, task.description)
+        println!("Task {}: {} {}", task.id, task.description, task.status)
     }
 }
 
