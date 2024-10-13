@@ -31,7 +31,7 @@ fn main() -> ExitCode {
                 println!("Missing id of task to delete");
                 return ExitCode::from(1);
             }
-            task_repository.delete(args[2].clone().parse::<i32>().unwrap());
+            delete_task(&mut task_repository, args[2].clone().parse::<i32>().unwrap());
         }
         "update" => {
             if args.len() < 4 {
@@ -135,11 +135,7 @@ impl TaskRepository {
     }
 
     fn delete(&mut self, id: i32) -> Option<Task> {
-        let ret = self.tasks.remove(&id);
-        let mut list_file = fs::File::create("task_list.txt").unwrap();
-        let _ = list_file.write(
-            serde_json::to_string(&self.serializable()).unwrap().as_bytes());
-        ret
+        self.tasks.remove(&id)
     }
 }
 
@@ -154,13 +150,20 @@ fn add_task(repo: &mut TaskRepository, desc: String) {
     save_repository(repo, &FILE_TO_SAVE);
 }
 
+fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
+    let ret = repo.delete(task_id);
+    save_repository(repo, &FILE_TO_SAVE);
+    ret
+}
+
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     repo.tasks.get_mut(&id).unwrap().description = new_desc;
+    save_repository(repo, &FILE_TO_SAVE);
 }
 
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.tasks.get_mut(&id).unwrap().status = TaskStatus::InProgress;
-
+    save_repository(repo, &FILE_TO_SAVE);
 }
 
 fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
