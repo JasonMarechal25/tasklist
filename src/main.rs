@@ -4,17 +4,24 @@ use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{BufReader, Write};
-use std::path::Path;
-use std::process::ExitCode;
+use serde::{Serialize, Deserialize};
+use std::fmt::{Display, Formatter};
+use std::string::ToString;
+use tempfile::TempDir;
+use std::sync::LazyLock;
+use std::fs::OpenOptions;
 
-const FILE_TO_SAVE: &str = "task_list.txt";
+static FILE_TO_SAVE: LazyLock<String> = LazyLock::new(|| {
+    env::var("TASK_FILE").unwrap_or("task_list_default.txt".to_string())
+});
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("No command provided, goodbye.");
         return ExitCode::from(0);
     }
-    let mut task_repository = load_repository(&FILE_TO_SAVE);
+    let mut task_repository = load_repository(&FILE_TO_SAVE.as_str());
     let param1 = &args[1];
     match param1.as_str() {
         "list" => {
@@ -114,7 +121,7 @@ impl TaskRepository {
         task_repository
     }
 
-    fn new_task(&mut self, description: String) -> &Task {
+    fn new_task(&mut self, description: String) {
         self.last_id += 1;
         let task = Task {
             description,
@@ -122,7 +129,6 @@ impl TaskRepository {
             status: TaskStatus::Todo,
         };
         self.tasks.insert(self.last_id, task);
-        &self.tasks[&self.last_id]
     }
 
     fn serializable(&self) -> TaskRepositoryForSerialization {
@@ -144,23 +150,23 @@ fn print_tasks(repository: &TaskRepository) {
 
 fn add_task(repo: &mut TaskRepository, desc: String) {
     repo.new_task(desc);
-    save_repository(repo, &FILE_TO_SAVE);
+    save_repository(repo, &FILE_TO_SAVE.as_str());
 }
 
 fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
     let ret = repo.delete(task_id);
-    save_repository(repo, &FILE_TO_SAVE);
+    save_repository(repo, &FILE_TO_SAVE.as_str());
     ret
 }
 
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     repo.tasks.get_mut(&id).unwrap().description = new_desc;
-    save_repository(repo, &FILE_TO_SAVE);
+    save_repository(repo, &FILE_TO_SAVE.as_str());
 }
 
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.tasks.get_mut(&id).unwrap().status = TaskStatus::InProgress;
-    save_repository(repo, &FILE_TO_SAVE);
+    save_repository(repo, &FILE_TO_SAVE.as_str());
 }
 
 fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
@@ -173,7 +179,10 @@ fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
 }
 
 fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
-    let file = fs::File::open(file_path).unwrap();
+    if !fs::exists(file_path).unwrap() {
+        return TaskRepository::default();
+    }
+    let file = OpenOptions::new().read(true).create(true).write(true).open(file_path).unwrap();
     let reader = BufReader::new(file);
     let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
     TaskRepository::from_serialization(repo_object)
@@ -185,10 +194,14 @@ mod tests {
     use std::path::Path;
     use tempfile::TempDir;
 
+
     #[test]
     fn task_added() {
         let mut task_repository = TaskRepository::default();
-        let task = task_repository.new_task(String::from("TestTask"));
+        let tmp_dir = TempDir::new().unwrap();
+        let tmp_file = tmp_dir.path().join(Path::new("tmp_file.txt"));
+        add_task(&mut task_repository, "TestTask".to_string());
+        let task = &task_repository.tasks[&1];
         assert_eq!(task.description, "TestTask");
         assert_eq!(task.id, 1);
     }
@@ -197,7 +210,8 @@ mod tests {
     fn task_id_incremental() {
         let mut task_repository = TaskRepository::default();
         task_repository.new_task(String::from("TestTask"));
-        let task2 = task_repository.new_task(String::from("otherTask"));
+        task_repository.new_task(String::from("otherTask"));
+        let task2 = &task_repository.tasks[&2];
         assert_eq!(task2.description, "otherTask");
         assert_eq!(task2.id, 2);
     }
