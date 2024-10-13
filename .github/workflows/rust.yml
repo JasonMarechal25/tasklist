@@ -86,6 +86,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: xtask
+          args: install
+
+      - name: Run xtask coverage
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
           args: coverage
           
 
