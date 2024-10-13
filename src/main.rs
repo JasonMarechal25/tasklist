@@ -6,7 +6,6 @@ use std::fs;
 use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::ExitCode;
-use tempfile::TempDir;
 
 const FILE_TO_SAVE: &str = "task_list.txt";
 fn main() -> ExitCode {
@@ -198,6 +197,8 @@ fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
 mod tests {
     use super::*;
     use std::path::Path;
+    use tempfile::TempDir;
+
 
     #[test]
     fn task_added() {
