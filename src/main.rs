@@ -198,7 +198,6 @@ mod tests {
     use std::path::Path;
     use tempfile::TempDir;
 
-
     #[test]
     fn task_added() {
         let mut task_repository = TaskRepository::default();
