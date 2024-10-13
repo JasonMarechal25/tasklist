@@ -1,11 +1,11 @@
-use std::path::Path;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
-use std::process::ExitCode;
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io::{BufReader, Write};
-use serde::{Serialize, Deserialize};
-use std::fmt::{Display, Formatter};
+use std::path::Path;
+use std::process::ExitCode;
 use tempfile::TempDir;
 
 const FILE_TO_SAVE: &str = "task_list.txt";
@@ -18,7 +18,9 @@ fn main() -> ExitCode {
     let mut task_repository = load_repository(&FILE_TO_SAVE);
     let param1 = &args[1];
     match param1.as_str() {
-        "list" => { print_tasks(&task_repository); }
+        "list" => {
+            print_tasks(&task_repository);
+        }
         "add" => {
             if args.len() < 3 {
                 println!("Missing description to add a new task");
@@ -31,31 +33,40 @@ fn main() -> ExitCode {
                 println!("Missing id of task to delete");
                 return ExitCode::from(1);
             }
-            delete_task(&mut task_repository, args[2].clone().parse::<i32>().unwrap());
+            delete_task(
+                &mut task_repository,
+                args[2].clone().parse::<i32>().unwrap(),
+            );
         }
         "update" => {
             if args.len() < 4 {
                 println!("Missing update parameters");
                 return ExitCode::from(1);
             }
-            update_task(&mut task_repository, args[2].clone().parse::<i32>().unwrap(), args[3].clone());
+            update_task(
+                &mut task_repository,
+                args[2].clone().parse::<i32>().unwrap(),
+                args[3].clone(),
+            );
         }
         "mark-in-progress" => {
             if args.len() < 3 {
                 println!("Missing id of task to progress");
                 return ExitCode::from(1);
             }
-            mark_in_progress(&mut task_repository, args[2].clone().parse::<i32>().unwrap());
+            mark_in_progress(
+                &mut task_repository,
+                args[2].clone().parse::<i32>().unwrap(),
+            );
         }
-        _ => { println!("Unknown parameter {}", param1) }
+        _ => {
+            println!("Unknown parameter {}", param1)
+        }
     }
     ExitCode::from(0)
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 enum TaskStatus {
     Todo,
     InProgress,
@@ -72,19 +83,14 @@ impl Display for TaskStatus {
     }
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 struct Task {
     id: i32,
     description: String,
     status: TaskStatus,
 }
 
-#[derive(Clone)]
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Clone, PartialEq, Debug)]
 struct TaskRepository {
     tasks: HashMap<i32, Task>,
     last_id: i32,
@@ -114,7 +120,9 @@ impl TaskRepository {
         let mut task_repository = TaskRepository::default();
         let mut max_id = 0;
         for task in object.tasks {
-            if task.id > max_id { max_id = task.id }
+            if task.id > max_id {
+                max_id = task.id
+            }
             task_repository.tasks.insert(task.id, task);
         }
         task_repository.last_id = max_id;
@@ -123,7 +131,11 @@ impl TaskRepository {
 
     fn new_task(&mut self, description: String) -> &Task {
         self.last_id += 1;
-        let task = Task { description: description, id: self.last_id, status: TaskStatus::Todo };
+        let task = Task {
+            description: description,
+            id: self.last_id,
+            status: TaskStatus::Todo,
+        };
         self.tasks.insert(self.last_id, task);
         &self.tasks[&self.last_id]
     }
@@ -169,7 +181,10 @@ fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
 fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
     let mut list_file = fs::File::create(file_path).unwrap();
     let _ = list_file.write(
-        serde_json::to_string(&repo.serializable()).unwrap().as_bytes());
+        serde_json::to_string(&repo.serializable())
+            .unwrap()
+            .as_bytes(),
+    );
 }
 
 fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
@@ -181,8 +196,8 @@ fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::path::Path;
-use super::*;
 
     #[test]
     fn task_added() {
@@ -212,10 +227,25 @@ use super::*;
     #[test]
     fn repository_load_json() {
         let expected = HashMap::from([
-            (0, Task { id: 0, description: String::from("plop"), status: TaskStatus::Todo }),
-            (1, Task { id: 1, description: String::from("plap"), status: TaskStatus::Done })
+            (
+                0,
+                Task {
+                    id: 0,
+                    description: String::from("plop"),
+                    status: TaskStatus::Todo,
+                },
+            ),
+            (
+                1,
+                Task {
+                    id: 1,
+                    description: String::from("plap"),
+                    status: TaskStatus::Done,
+                },
+            ),
         ]);
-        let task_repository = TaskRepository::from_content(format!("\
+        let task_repository = TaskRepository::from_content(format!(
+            "\
         {{\
         \"tasks\": [\
             {{\
@@ -230,7 +260,8 @@ use super::*;
             }}\
         ]\
         }}\
-        "));
+        "
+        ));
         assert_eq!(expected, task_repository.tasks);
     }
 
@@ -240,7 +271,10 @@ use super::*;
         task_repository.new_task("Plop".to_string());
         task_repository.new_task("Plip".to_string());
         let dump = serde_json::to_string(&task_repository.serializable()).unwrap();
-        assert_eq!(dump, String::from("{\
+        assert_eq!(
+            dump,
+            String::from(
+                "{\
         \"tasks\":[\
             {\
                 \"id\":1,\
@@ -253,7 +287,9 @@ use super::*;
                 \"status\":\"Todo\"\
             }\
         ]\
-        }"))
+        }"
+            )
+        )
     }
 
     #[test]
@@ -263,7 +299,14 @@ use super::*;
         task_repository.new_task("Plip".to_string());
         task_repository.delete(1);
         assert_eq!(task_repository.tasks.len(), 1);
-        assert_eq!(task_repository.tasks[&2], Task { id: 2, description: String::from("Plip"), status: TaskStatus::Todo });
+        assert_eq!(
+            task_repository.tasks[&2],
+            Task {
+                id: 2,
+                description: String::from("Plip"),
+                status: TaskStatus::Todo
+            }
+        );
     }
 
     #[test]
