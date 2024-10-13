@@ -89,7 +89,7 @@ struct Task {
     status: TaskStatus,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 struct TaskRepository {
     tasks: HashMap<i32, Task>,
     last_id: i32,
@@ -100,21 +100,7 @@ struct TaskRepositoryForSerialization {
     tasks: Vec<Task>,
 }
 
-impl Default for TaskRepository {
-    fn default() -> Self {
-        TaskRepository {
-            tasks: HashMap::new(),
-            last_id: 0,
-        }
-    }
-}
-
 impl TaskRepository {
-    fn from_content(content: String) -> Self {
-        let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
-        Self::from_serialization(object)
-    }
-
     fn from_serialization(object: TaskRepositoryForSerialization) -> Self {
         let mut task_repository = TaskRepository::default();
         let mut max_id = 0;
@@ -131,7 +117,7 @@ impl TaskRepository {
     fn new_task(&mut self, description: String) -> &Task {
         self.last_id += 1;
         let task = Task {
-            description: description,
+            description,
             id: self.last_id,
             status: TaskStatus::Todo,
         };
@@ -151,7 +137,7 @@ impl TaskRepository {
 }
 
 fn print_tasks(repository: &TaskRepository) {
-    for (_, task) in &repository.tasks {
+    for task in repository.tasks.values() {
         println!("Task {}: {} {}", task.id, task.description, task.status)
     }
 }
@@ -244,7 +230,7 @@ mod tests {
                 },
             ),
         ]);
-        let task_repository = TaskRepository::from_content(format!(
+        let content = format!(
             "\
         {{\
         \"tasks\": [\
@@ -261,7 +247,9 @@ mod tests {
         ]\
         }}\
         "
-        ));
+        );
+        let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
+        let task_repository = TaskRepository::from_serialization(object);
         assert_eq!(expected, task_repository.tasks);
     }
 
