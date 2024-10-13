@@ -8,7 +8,6 @@ use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::ExitCode;
 use std::string::ToString;
-use tempfile::TempDir;
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -149,6 +148,8 @@ fn print_tasks(repository: &TaskRepository) {
 
 fn add_task(repo: &mut TaskRepository, desc: String) {
     repo.new_task(desc);
+    let var = &env::var("TASK_FILE").unwrap().to_string();
+    println!("var {}", var);
     save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
@@ -202,7 +203,7 @@ mod tests {
     fn task_added() {
         let mut task_repository = TaskRepository::default();
         let tmp_dir = TempDir::new().unwrap();
-        let tmp_file = tmp_dir.path().join(Path::new("tmp_file.txt"));
+        let _ = env::set_current_dir(&tmp_dir);
         add_task(&mut task_repository, "TestTask".to_string());
         let task = &task_repository.tasks[&1];
         assert_eq!(task.description, "TestTask");

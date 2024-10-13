@@ -1,5 +1,2 @@
 [env]
 TASK_FILE = "task_list.txt"
-
-[profile.test.env]
-TASK_FILE = "test_task_list.txt"
