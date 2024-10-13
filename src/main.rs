@@ -3,17 +3,12 @@ use std::collections::HashMap;
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::{BufReader, Write};
-use serde::{Serialize, Deserialize};
-use std::fmt::{Display, Formatter};
+use std::path::Path;
+use std::process::ExitCode;
 use std::string::ToString;
 use tempfile::TempDir;
-use std::sync::LazyLock;
-use std::fs::OpenOptions;
-
-static FILE_TO_SAVE: LazyLock<String> = LazyLock::new(|| {
-    env::var("TASK_FILE").unwrap_or("task_list_default.txt".to_string())
-});
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -21,7 +16,11 @@ fn main() -> ExitCode {
         println!("No command provided, goodbye.");
         return ExitCode::from(0);
     }
-    let mut task_repository = load_repository(&FILE_TO_SAVE.as_str());
+    println!(
+        "Using repository file {}",
+        &env::var("TASK_FILE").unwrap().to_string()
+    );
+    let mut task_repository = load_repository(&env::var("TASK_FILE").unwrap().to_string());
     let param1 = &args[1];
     match param1.as_str() {
         "list" => {
@@ -150,23 +149,23 @@ fn print_tasks(repository: &TaskRepository) {
 
 fn add_task(repo: &mut TaskRepository, desc: String) {
     repo.new_task(desc);
-    save_repository(repo, &FILE_TO_SAVE.as_str());
+    save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
 fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
     let ret = repo.delete(task_id);
-    save_repository(repo, &FILE_TO_SAVE.as_str());
+    save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
     ret
 }
 
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     repo.tasks.get_mut(&id).unwrap().description = new_desc;
-    save_repository(repo, &FILE_TO_SAVE.as_str());
+    save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.tasks.get_mut(&id).unwrap().status = TaskStatus::InProgress;
-    save_repository(repo, &FILE_TO_SAVE.as_str());
+    save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
 fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
@@ -182,7 +181,12 @@ fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
     if !fs::exists(file_path).unwrap() {
         return TaskRepository::default();
     }
-    let file = OpenOptions::new().read(true).create(true).write(true).open(file_path).unwrap();
+    let file = OpenOptions::new()
+        .read(true)
+        .create(true)
+        .write(true)
+        .open(file_path)
+        .unwrap();
     let reader = BufReader::new(file);
     let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
     TaskRepository::from_serialization(repo_object)
