@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::collections::HashMap;
 use std::env;
 use std::process::ExitCode;
@@ -5,6 +6,7 @@ use std::fs;
 use std::io::{BufReader, Write};
 use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
+use tempfile::TempDir;
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -12,10 +14,7 @@ fn main() -> ExitCode {
         println!("No command provided, goodbye.");
         return ExitCode::from(0);
     }
-    let file = fs::File::open("task_list.txt").unwrap();
-    let reader = BufReader::new(file);
-    let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
-    let mut task_repository = TaskRepository::from_serialization(repo_object);
+    let mut task_repository = load_repository(&Path::new("task_list.txt"));
     let param1 = &args[1];
     match param1.as_str() {
         "list" => { print_tasks(&task_repository); }
@@ -83,6 +82,8 @@ struct Task {
 }
 
 #[derive(Clone)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 struct TaskRepository {
     tasks: HashMap<i32, Task>,
     last_id: i32,
@@ -156,11 +157,26 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
 
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.tasks.get_mut(&id).unwrap().status = TaskStatus::InProgress;
+
+}
+
+fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) {
+    let mut list_file = fs::File::create(file_path).unwrap();
+    let _ = list_file.write(
+        serde_json::to_string(&repo.serializable()).unwrap().as_bytes());
+}
+
+fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
+    let file = fs::File::open(file_path).unwrap();
+    let reader = BufReader::new(file);
+    let repo_object: TaskRepositoryForSerialization = serde_json::from_reader(reader).unwrap();
+    TaskRepository::from_serialization(repo_object)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::path::Path;
+use super::*;
 
     #[test]
     fn task_added() {
@@ -259,5 +275,18 @@ mod tests {
         task_repository.new_task("Plop".to_string());
         mark_in_progress(&mut task_repository, 1);
         assert_eq!(task_repository.tasks[&1].status, TaskStatus::InProgress);
+    }
+
+    #[test]
+    fn save_load_repo() {
+        let mut task_repository = TaskRepository::default();
+        task_repository.new_task("Plop".to_string());
+        task_repository.new_task("Plip".to_string());
+        mark_in_progress(&mut task_repository, 1);
+        let tmp_dir = TempDir::new().unwrap();
+        let tmp_file = tmp_dir.path().join(Path::new("tmp_file.txt"));
+        save_repository(&mut task_repository, &tmp_file);
+        let loaded_repo = load_repository(&tmp_file);
+        assert_eq!(task_repository, loaded_repo);
     }
 }
