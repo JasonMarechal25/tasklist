@@ -8,13 +8,14 @@ use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
 use tempfile::TempDir;
 
+const FILE_TO_SAVE: &str = "task_list.txt";
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("No command provided, goodbye.");
         return ExitCode::from(0);
     }
-    let mut task_repository = load_repository(&Path::new("task_list.txt"));
+    let mut task_repository = load_repository(&FILE_TO_SAVE);
     let param1 = &args[1];
     match param1.as_str() {
         "list" => { print_tasks(&task_repository); }
@@ -23,7 +24,7 @@ fn main() -> ExitCode {
                 println!("Missing description to add a new task");
                 return ExitCode::from(1);
             }
-            task_repository.new_task(args[2].clone());
+            add_task(&mut task_repository, args[2].clone());
         }
         "delete" => {
             if args.len() < 3 {
@@ -124,9 +125,6 @@ impl TaskRepository {
         self.last_id += 1;
         let task = Task { description: description, id: self.last_id, status: TaskStatus::Todo };
         self.tasks.insert(self.last_id, task);
-        let mut list_file = fs::File::create("task_list.txt").unwrap();
-        let _ = list_file.write(
-            serde_json::to_string(&self.serializable()).unwrap().as_bytes());
         &self.tasks[&self.last_id]
     }
 
@@ -149,6 +147,11 @@ fn print_tasks(repository: &TaskRepository) {
     for (_, task) in &repository.tasks {
         println!("Task {}: {} {}", task.id, task.description, task.status)
     }
+}
+
+fn add_task(repo: &mut TaskRepository, desc: String) {
+    repo.new_task(desc);
+    save_repository(repo, &FILE_TO_SAVE);
 }
 
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
