@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Values;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
@@ -5,7 +6,6 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum TaskStatus {
@@ -24,7 +24,6 @@ pub struct TaskRepository {
     tasks: HashMap<i32, Task>,
     last_id: i32,
 }
-
 
 impl Display for TaskStatus {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -111,7 +110,6 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
             .as_bytes(),
     );
 }
-
 
 #[test]
 fn repository_load_json() {

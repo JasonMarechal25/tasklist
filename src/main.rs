@@ -1,6 +1,6 @@
-use crate::task_repository::TaskStatus;
 use crate::task_repository::Task;
 use crate::task_repository::TaskRepository;
+use crate::task_repository::TaskStatus;
 use std::env;
 use std::process::ExitCode;
 use std::string::ToString;
@@ -35,10 +35,7 @@ fn main() -> ExitCode {
                 println!("Missing id of task to delete");
                 return ExitCode::from(1);
             }
-            delete_task(
-                &mut repo,
-                args[2].clone().parse::<i32>().unwrap(),
-            );
+            delete_task(&mut repo, args[2].clone().parse::<i32>().unwrap());
         }
         "update" => {
             if args.len() < 4 {
@@ -56,10 +53,7 @@ fn main() -> ExitCode {
                 println!("Missing id of task to progress");
                 return ExitCode::from(1);
             }
-            mark_in_progress(
-                &mut repo,
-                args[2].clone().parse::<i32>().unwrap(),
-            );
+            mark_in_progress(&mut repo, args[2].clone().parse::<i32>().unwrap());
         }
         _ => {
             println!("Unknown parameter {}", param1)
