@@ -64,7 +64,7 @@ fn main() -> ExitCode {
 
 fn print_tasks(repository: &TaskRepository) {
     for task in repository.tasks() {
-        println!("Task {}: {} {}", task.id, task.description, task.status)
+        println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
     }
 }
 
@@ -134,14 +134,10 @@ mod tests {
         repo.new_task("Plip".to_string());
         repo.delete(1);
         assert_eq!(repo.task_count(), 1);
-        assert_eq!(
-            *repo.task(2),
-            Task {
-                id: 2,
-                description: String::from("Plip"),
-                status: TaskStatus::Todo
-            }
-        );
+        let task = repo.task(2);
+        assert_eq!(task.id, 2);
+        assert_eq!(task.description, String::from("Plip"));
+        assert_eq!(task.status, TaskStatus::Todo);
     }
 
     #[test]

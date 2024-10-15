@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, Write};
 use std::path::Path;
+use chrono::{DateTime, Local, TimeZone};
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum TaskStatus {
@@ -18,6 +19,8 @@ pub struct Task {
     pub id: i32,
     pub description: String,
     pub status: TaskStatus,
+    pub created_at: DateTime<Local>,
+    pub updated_at: DateTime<Local>,
 }
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct TaskRepository {
@@ -60,6 +63,8 @@ impl TaskRepository {
             description,
             id: self.last_id,
             status: TaskStatus::Todo,
+            created_at: Local::now(),
+            updated_at: Local::now(),
         };
         self.tasks.insert(self.last_id, task);
     }
@@ -111,49 +116,6 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
     );
 }
 
-#[test]
-fn repository_load_json() {
-    let expected = HashMap::from([
-        (
-            0,
-            Task {
-                id: 0,
-                description: String::from("plop"),
-                status: TaskStatus::Todo,
-            },
-        ),
-        (
-            1,
-            Task {
-                id: 1,
-                description: String::from("plap"),
-                status: TaskStatus::Done,
-            },
-        ),
-    ]);
-    let content = format!(
-        "\
-        {{\
-        \"tasks\": [\
-            {{\
-                \"id\": 0,\
-                \"description\": \"plop\",\
-                \"status\": \"Todo\"\
-            }},\
-            {{\
-                \"id\": 1,\
-                \"description\": \"plap\",\
-                \"status\": \"Done\"\
-            }}\
-        ]\
-        }}\
-        "
-    );
-    let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
-    let repo = TaskRepository::from_serialization(object);
-    assert_eq!(expected, repo.tasks);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,5 +144,52 @@ mod tests {
         }"
             )
         )
+    }
+
+    #[test]
+    fn repository_load_json() {
+        let expected = HashMap::from([
+            (
+                0,
+                Task {
+                    id: 0,
+                    description: String::from("plop"),
+                    status: TaskStatus::Todo,
+                    created_at: DateTime::from(Local.with_ymd_and_hms(2024, 01, 01, 01, 02, 03).unwrap()),
+                    updated_at: DateTime::from(Local.with_ymd_and_hms(2024, 02, 01, 05, 02, 03).unwrap()),
+                },
+            ),
+            (
+                1,
+                Task {
+                    id: 1,
+                    description: String::from("plap"),
+                    status: TaskStatus::Done,
+                    created_at: DateTime::from(Local.with_ymd_and_hms(2024, 03, 06, 01, 02, 03).unwrap()),
+                    updated_at: DateTime::from(Local.with_ymd_and_hms(2024, 02, 01, 05, 12, 03).unwrap()),
+                },
+            ),
+        ]);
+        let content = format!(
+            "\
+        {{\
+        \"tasks\": [\
+            {{\
+                \"id\": 0,\
+                \"description\": \"plop\",\
+                \"status\": \"Todo\"\
+            }},\
+            {{\
+                \"id\": 1,\
+                \"description\": \"plap\",\
+                \"status\": \"Done\"\
+            }}\
+        ]\
+        }}\
+        "
+        );
+        let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
+        let repo = TaskRepository::from_serialization(object);
+        assert_eq!(expected, repo.tasks);
     }
 }
