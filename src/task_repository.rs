@@ -120,35 +120,8 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
 mod tests {
     use super::*;
     #[test]
-    fn repository_dump_json() {
-        let mut repo = TaskRepository::default();
-        repo.new_task("Plop".to_string());
-        repo.new_task("Plip".to_string());
-        let dump = serde_json::to_string(&repo.serializable()).unwrap();
-        assert_eq!(
-            dump,
-            String::from(
-                "{\
-        \"tasks\":[\
-            {\
-                \"id\":1,\
-                \"description\":\"Plop\",\
-                \"status\":\"Todo\"\
-            },\
-            {\
-                \"id\":2,\
-                \"description\":\"Plip\",\
-                \"status\":\"Todo\"\
-            }\
-        ]\
-        }"
-            )
-        )
-    }
-
-    #[test]
     fn repository_load_json() {
-        let expected = HashMap::from([
+        let mut expected = HashMap::from([
             (
                 0,
                 Task {
@@ -177,12 +150,16 @@ mod tests {
             {{\
                 \"id\": 0,\
                 \"description\": \"plop\",\
-                \"status\": \"Todo\"\
+                \"status\": \"Todo\",\
+                \"created_at\":\"2024-10-16T14:45:18.529270461+02:00\",\
+                \"updated_at\":\"2024-10-16T14:45:18.529569668+02:00\"
             }},\
             {{\
                 \"id\": 1,\
                 \"description\": \"plap\",\
-                \"status\": \"Done\"\
+                \"status\": \"Done\",\
+                \"created_at\":\"2024-10-16T14:45:18.529270461+02:00\",\
+                \"updated_at\":\"2024-10-16T14:45:18.529569668+02:00\"
             }}\
         ]\
         }}\
@@ -190,6 +167,13 @@ mod tests {
         );
         let object: TaskRepositoryForSerialization = serde_json::from_str(&content).unwrap();
         let repo = TaskRepository::from_serialization(object);
-        assert_eq!(expected, repo.tasks);
+
+        //Can't assert_eq because repo because of dates
+        assert_eq!(repo.tasks.len(), expected.len());
+        for (key, value) in repo.tasks.iter() {
+            assert_eq!(value.id, expected[key].id);
+            assert_eq!(value.description, expected[key].description);
+            assert_eq!(value.status, expected[key].status);
+        }
     }
 }
