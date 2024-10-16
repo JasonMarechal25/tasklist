@@ -118,7 +118,24 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
 
 #[cfg(test)]
 mod tests {
+    use serde_json::Value;
     use super::*;
+
+    #[test]
+    fn repository_save_json() {
+        let mut repo = TaskRepository::default();
+        repo.new_task(String::from("plop"));
+        repo.new_task(String::from("plap"));
+        repo.task(1).status = TaskStatus::Done;
+        let file_path = "test.json";
+        let serialized_data = serde_json::to_string(&repo.serializable()).unwrap();
+        let json_object: Value = serde_json::from_str(&serialized_data).unwrap();
+
+        assert_eq!(json_object["tasks"][0]["description"], "plop");
+        assert_eq!(json_object["tasks"][0]["status"], "Done");
+        assert_eq!(json_object["tasks"][1]["description"], "plap");
+    }
+
     #[test]
     fn repository_load_json() {
         let mut expected = HashMap::from([
