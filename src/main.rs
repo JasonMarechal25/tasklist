@@ -21,7 +21,23 @@ fn main() -> ExitCode {
     let param1 = &args[1];
     match param1.as_str() {
         "list" => {
-            print_tasks(&repo);
+            if args.len() == 2 {
+                print_tasks(&repo);
+            } else if args.len() == 3 {
+                match args[2].as_str() {
+                    "todo" => {
+                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Todo) {
+                            println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
+                        };
+                    },
+                    "done" => {
+                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Todo) {
+                            println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
+                        };
+                    }
+                    &_ => todo!()
+                }
+            }
         }
         "add" => {
             if args.len() < 3 {
