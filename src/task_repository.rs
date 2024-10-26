@@ -6,7 +6,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, Local};
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum TaskStatus {
@@ -120,6 +120,7 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
 mod tests {
     use serde_json::Value;
     use super::*;
+    use chrono::TimeZone;
 
     #[test]
     fn repository_save_json() {

@@ -26,16 +26,18 @@ fn main() -> ExitCode {
             } else if args.len() == 3 {
                 match args[2].as_str() {
                     "todo" => {
-                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Todo) {
-                            println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
-                        };
+                        print_tasks_by_status(&repo, TaskStatus::Todo);
                     },
                     "done" => {
-                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Done) {
-                            println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
-                        };
+                        print_tasks_by_status(&repo, TaskStatus::Done);
+                    },
+                    "in-progress" => {
+                        print_tasks_by_status(&repo, TaskStatus::InProgress);
                     }
-                    &_ => todo!()
+                    &_ => {
+                        println!("Unknown status to display");
+                        return ExitCode::from(1);
+                    }
                 }
             }
         }
@@ -78,10 +80,28 @@ fn main() -> ExitCode {
     ExitCode::from(0)
 }
 
-fn print_tasks(repository: &TaskRepository) {
-    for task in repository.tasks() {
-        println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
+fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
+    let task_list: Vec<_> = repo.tasks().filter(|task| task.status == status).collect();
+    if task_list.len() > 0 {
+        task_list.into_iter().for_each(|task| print_task(task));
+    } else {
+        println!("No task with status {}", status);
     }
+}
+
+fn print_tasks(repository: &TaskRepository) {
+    if repository.task_count() > 0 {
+        repository.tasks().for_each(|task| print_task(task));
+    } else {
+        println!("Your task list is empty.");
+    }
+}
+
+fn print_task(task: &Task) {
+    println!(
+        "Task {}: \"{}\" {}. Created at: {}. Last update: {}",
+        task.id, task.description, task.status, task.created_at, task.created_at
+    );
 }
 
 fn add_task(repo: &mut TaskRepository, desc: String) {
