@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Values;
 use std::collections::HashMap;
@@ -6,7 +7,6 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use chrono::{DateTime, Local};
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum TaskStatus {
@@ -118,9 +118,9 @@ pub fn save_repository(repo: &mut TaskRepository, file_path: &impl AsRef<Path>) 
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Value;
     use super::*;
     use chrono::TimeZone;
+    use serde_json::Value;
 
     #[test]
     fn repository_save_json() {
@@ -145,8 +145,12 @@ mod tests {
                     id: 0,
                     description: String::from("plop"),
                     status: TaskStatus::Todo,
-                    created_at: DateTime::from(Local.with_ymd_and_hms(2024, 01, 01, 01, 02, 03).unwrap()),
-                    updated_at: DateTime::from(Local.with_ymd_and_hms(2024, 02, 01, 05, 02, 03).unwrap()),
+                    created_at: DateTime::from(
+                        Local.with_ymd_and_hms(2024, 01, 01, 01, 02, 03).unwrap(),
+                    ),
+                    updated_at: DateTime::from(
+                        Local.with_ymd_and_hms(2024, 02, 01, 05, 02, 03).unwrap(),
+                    ),
                 },
             ),
             (
@@ -155,8 +159,12 @@ mod tests {
                     id: 1,
                     description: String::from("plap"),
                     status: TaskStatus::Done,
-                    created_at: DateTime::from(Local.with_ymd_and_hms(2024, 03, 06, 01, 02, 03).unwrap()),
-                    updated_at: DateTime::from(Local.with_ymd_and_hms(2024, 02, 01, 05, 12, 03).unwrap()),
+                    created_at: DateTime::from(
+                        Local.with_ymd_and_hms(2024, 03, 06, 01, 02, 03).unwrap(),
+                    ),
+                    updated_at: DateTime::from(
+                        Local.with_ymd_and_hms(2024, 02, 01, 05, 12, 03).unwrap(),
+                    ),
                 },
             ),
         ]);

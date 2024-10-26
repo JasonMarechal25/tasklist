@@ -27,10 +27,10 @@ fn main() -> ExitCode {
                 match args[2].as_str() {
                     "todo" => {
                         print_tasks_by_status(&repo, TaskStatus::Todo);
-                    },
+                    }
                     "done" => {
                         print_tasks_by_status(&repo, TaskStatus::Done);
-                    },
+                    }
                     "in-progress" => {
                         print_tasks_by_status(&repo, TaskStatus::InProgress);
                     }
