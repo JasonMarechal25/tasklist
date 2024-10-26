@@ -127,7 +127,6 @@ mod tests {
         repo.new_task(String::from("plop"));
         repo.new_task(String::from("plap"));
         repo.task(1).status = TaskStatus::Done;
-        let file_path = "test.json";
         let serialized_data = serde_json::to_string(&repo.serializable()).unwrap();
         let json_object: Value = serde_json::from_str(&serialized_data).unwrap();
 
@@ -138,7 +137,7 @@ mod tests {
 
     #[test]
     fn repository_load_json() {
-        let mut expected = HashMap::from([
+        let expected = HashMap::from([
             (
                 0,
                 Task {

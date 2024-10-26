@@ -14,7 +14,7 @@ fn main() -> ExitCode {
         return ExitCode::from(0);
     }
     println!(
-        "Using repository file {}",
+        "Reading tasks from {}",
         &env::var("TASK_FILE").unwrap().to_string()
     );
     let mut repo = task_repository::load_repository(&env::var("TASK_FILE").unwrap().to_string());
@@ -31,7 +31,7 @@ fn main() -> ExitCode {
                         };
                     },
                     "done" => {
-                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Todo) {
+                        for task in repo.tasks().filter(|task| task.status == TaskStatus::Done) {
                             println!("Task {}: \"{}\" {}. Created at: {}. Last update: {}", task.id, task.description, task.status, task.created_at, task.created_at)
                         };
                     }
