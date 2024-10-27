@@ -7,6 +7,14 @@ use std::string::ToString;
 
 pub mod task_repository;
 
+/// The main entry point of the application.
+///
+/// This function reads command-line arguments and the `TASK_FILE` environment variable,
+/// loads the task repository, and handles the provided command.
+///
+/// # Returns
+///
+/// An `ExitCode` indicating the success or failure of the operation.
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -34,6 +42,16 @@ fn main() -> ExitCode {
     }
 }
 
+/// Handles the provided command by delegating to the appropriate function.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A mutable reference to the `TaskRepository`.
+///
+/// # Returns
+///
+/// A `Result` indicating the success or failure of the operation.
 fn handle_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
     let param1 = &args[1];
     match param1.as_str() {
@@ -46,6 +64,16 @@ fn handle_command(args: &[String], repo: &mut TaskRepository) -> Result<(), Stri
     }
 }
 
+/// Handles the "list" command to display tasks.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A reference to the `TaskRepository`.
+///
+/// # Returns
+///
+/// A `Result` indicating the success or failure of the operation.
 fn handle_list_command(args: &[String], repo: &TaskRepository) -> Result<(), String> {
     if args.len() == 2 {
         print_tasks(repo);
@@ -60,6 +88,16 @@ fn handle_list_command(args: &[String], repo: &TaskRepository) -> Result<(), Str
     Ok(())
 }
 
+/// Handles the "add" command to add a new task.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A mutable reference to the `TaskRepository`.
+///
+/// # Returns
+///
+/// A `Result` indicating the success or failure of the operation.
 fn handle_add_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
     if args.len() < 3 {
         return Err("Missing description to add a new task".to_string());
@@ -68,6 +106,16 @@ fn handle_add_command(args: &[String], repo: &mut TaskRepository) -> Result<(), 
     Ok(())
 }
 
+/// Handles the "delete" command to delete a task.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A mutable reference to the `TaskRepository`.
+///
+/// # Returns
+///
+/// A `Result` indicating the success or failure of the operation.
 fn handle_delete_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
     if args.len() < 3 {
         return Err("Missing id of task to delete".to_string());
@@ -76,6 +124,16 @@ fn handle_delete_command(args: &[String], repo: &mut TaskRepository) -> Result<(
     Ok(())
 }
 
+/// Handles the "update" command to update a task's description.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A mutable reference to the `TaskRepository`.
+///
+/// # Returns
+///
+/// A `Result` indicating the success or failure of the operation.
 fn handle_update_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
     if args.len() < 4 {
         return Err("Missing update parameters".to_string());
@@ -88,6 +146,15 @@ fn handle_update_command(args: &[String], repo: &mut TaskRepository) -> Result<(
     Ok(())
 }
 
+/// Handles the "mark-in-progress" command to mark a task as in progress.
+///
+/// # Arguments
+///
+/// * `args` - A slice of command-line arguments.
+/// * `repo` - A mutable reference to the `TaskRepository`.
+///
+/// # Returns
+///
 fn handle_mark_in_progress_command(
     args: &[String],
     repo: &mut TaskRepository,
@@ -99,6 +166,12 @@ fn handle_mark_in_progress_command(
     Ok(())
 }
 
+/// Prints tasks filtered by their status.
+///
+/// # Arguments
+///
+/// * `repo` - A reference to the `TaskRepository`.
+/// * `status` - The `TaskStatus` to filter tasks by.
 fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
     let task_list: Vec<_> = repo.tasks().filter(|task| task.status == status).collect();
     if task_list.len() > 0 {
@@ -108,6 +181,11 @@ fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
     }
 }
 
+/// Prints all tasks in the repository.
+///
+/// # Arguments
+///
+/// * `repository` - A reference to the `TaskRepository`.
 fn print_tasks(repository: &TaskRepository) {
     if repository.task_count() > 0 {
         repository.tasks().for_each(|task| print_task(task));
@@ -116,6 +194,11 @@ fn print_tasks(repository: &TaskRepository) {
     }
 }
 
+/// Prints a single task.
+///
+/// # Arguments
+///
+/// * `task` - A reference to the `Task` to be printed.
 fn print_task(task: &Task) {
     println!(
         "Task {}: \"{}\" {}. Created at: {}. Last update: {}",
@@ -123,6 +206,12 @@ fn print_task(task: &Task) {
     );
 }
 
+/// Adds a new task to the repository.
+///
+/// # Arguments
+///
+/// * `repo` - A mutable reference to the `TaskRepository`.
+/// * `desc` - A string describing the new task.
 fn add_task(repo: &mut TaskRepository, desc: String) {
     repo.new_task(desc);
     let var = &env::var("TASK_FILE").unwrap().to_string();
@@ -130,18 +219,41 @@ fn add_task(repo: &mut TaskRepository, desc: String) {
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
+/// Deletes a task from the repository.
+///
+/// # Arguments
+///
+/// * `repo` - A mutable reference to the `TaskRepository`.
+/// * `task_id` - The ID of the task to be deleted.
+///
+/// # Returns
+///
+/// An `Option` containing the deleted `Task` if it existed.
 fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
     let ret = repo.delete(task_id);
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
     ret
 }
 
+/// Updates the description of a task.
+///
+/// # Arguments
+///
+/// * `repo` - A mutable reference to the `TaskRepository`.
+/// * `id` - The ID of the task to be updated.
+/// * `new_desc` - The new description for the task.
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     let task = repo.task(id);
     task.description = new_desc;
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
+/// Marks a task as in progress.
+///
+/// # Arguments
+///
+/// * `repo` - A mutable reference to the `TaskRepository`.
+/// * `id` - The ID of the task to be marked as in progress.
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.task(id).status = TaskStatus::InProgress;
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
