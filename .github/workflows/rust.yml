@@ -109,8 +109,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            exe-ubuntu-latest
-            exe-windows-latest
+            exe-ubuntu-latest.zip
+            exe-windows-latest.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           tag_name: ${{ github.ref }}
