@@ -55,6 +55,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test -- --nocapture
+          args: -- --nocapture
 
   coverage:
     runs-on: ubuntu-latest
