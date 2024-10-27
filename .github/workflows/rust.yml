@@ -5,6 +5,8 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [ "published" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -31,6 +33,9 @@ jobs:
         os: [ ubuntu-latest, windows-latest ]
         rust: [ stable ]
     runs-on: ${{ matrix.os }}
+    env:
+      exe_name: taskTracker
+      exe_name_win: taskTracker.exe
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -41,6 +46,15 @@ jobs:
 
       - name: Run cargo test
         run: cargo test -- --nocapture
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: save artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: exe-${{matrix.os}}
+          path: "target/release/${{ contains(matrix.os, 'windows') && env.exe_name_win || env.exe_name }}"
 
   coverage:
     runs-on: ubuntu-latest
@@ -80,3 +94,32 @@ jobs:
 
       - name: Run cargo clippy
         run: cargo clippy -- -D warnings
+
+  release:
+    if: github.event_name == 'release'
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: exe-ubuntu-latest
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: exe-windows-latest
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            exe-ubuntu-latest
+            exe-windows-latest
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          tag_name: ${{ github.ref }}
+          body: |
+            This is a release for ${{ github.ref }}.
+            It contains the binary for the taskTracker application.
+          draft: false
+          prerelease: false
