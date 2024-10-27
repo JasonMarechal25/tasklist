@@ -253,6 +253,7 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
 /// * `repo` - A mutable reference to the `TaskRepository`.
 fn save_repository(repo: &mut TaskRepository) {
     ensure_file();
+    println!("Saving tasks to {}", env::var("TASK_FILE").unwrap());
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
