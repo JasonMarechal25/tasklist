@@ -174,10 +174,10 @@ fn handle_mark_in_progress_command(
 /// * `status` - The `TaskStatus` to filter tasks by.
 fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
     let task_list: Vec<_> = repo.tasks().filter(|task| task.status == status).collect();
-    if task_list.len() > 0 {
-        task_list.into_iter().for_each(|task| print_task(task));
-    } else {
+    if task_list.is_empty() {
         println!("No task with status {}", status);
+    } else {
+        task_list.into_iter().for_each(print_task);
     }
 }
 
@@ -188,7 +188,7 @@ fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
 /// * `repository` - A reference to the `TaskRepository`.
 fn print_tasks(repository: &TaskRepository) {
     if repository.task_count() > 0 {
-        repository.tasks().for_each(|task| print_task(task));
+        repository.tasks().for_each(print_task);
     } else {
         println!("Your task list is empty.");
     }

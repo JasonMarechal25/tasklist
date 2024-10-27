@@ -168,6 +168,7 @@ pub fn load_repository(file_path: &impl AsRef<Path>) -> TaskRepository {
     let file = OpenOptions::new()
         .read(true)
         .create(true)
+        .truncate(false)
         .write(true)
         .open(file_path)
         .unwrap();
