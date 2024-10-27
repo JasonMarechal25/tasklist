@@ -51,7 +51,7 @@ jobs:
         run: cargo build --release
 
       - name: save artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: exe-${{matrix.os}}
           path: "target/release/${{ contains(matrix.os, 'windows') && env.exe_name_win || env.exe_name }}"
@@ -101,11 +101,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: exe-ubuntu-latest
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: exe-windows-latest
 
