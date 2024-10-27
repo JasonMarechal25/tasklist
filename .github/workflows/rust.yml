@@ -38,6 +38,8 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         rust: [ stable ]
     runs-on: ${{ matrix.os }}
+    env:
+      TASK_LIST: "test_file.txt"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
