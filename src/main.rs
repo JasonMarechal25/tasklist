@@ -214,9 +214,7 @@ fn print_task(task: &Task) {
 /// * `desc` - A string describing the new task.
 fn add_task(repo: &mut TaskRepository, desc: String) {
     repo.new_task(desc);
-    let var = &env::var("TASK_FILE").unwrap().to_string();
-    println!("var {}", var);
-    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
+    save_repository(repo);
 }
 
 /// Deletes a task from the repository.
@@ -231,7 +229,7 @@ fn add_task(repo: &mut TaskRepository, desc: String) {
 /// An `Option` containing the deleted `Task` if it existed.
 fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
     let ret = repo.delete(task_id);
-    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
+    save_repository(repo);
     ret
 }
 
@@ -245,7 +243,24 @@ fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     let task = repo.task(id);
     task.description = new_desc;
-    //Check that TASK_FILE is defined
+    save_repository(repo);
+}
+
+/// Saves the current state of the task repository to the file specified by the `TASK_FILE` environment variable.
+///
+/// # Arguments
+///
+/// * `repo` - A mutable reference to the `TaskRepository`.
+fn save_repository(repo: &mut TaskRepository) {
+    ensure_file();
+    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
+}
+
+/// Ensures that the `TASK_FILE` environment variable is set.
+///
+/// If the `TASK_FILE` environment variable is not set, this function sets it to a default
+/// temporary file path and prints a message indicating the new path.
+fn ensure_file() {
     if env::var("TASK_FILE").is_err() {
         //set the TASK_FILE to a default value a temp file
         println!(
@@ -254,7 +269,6 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
         );
         env::set_var("TASK_FILE", env::temp_dir().join("task_file.txt"));
     }
-    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
 /// Marks a task as in progress.
@@ -265,7 +279,7 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
 /// * `id` - The ID of the task to be marked as in progress.
 fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
     repo.task(id).status = TaskStatus::InProgress;
-    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
+    save_repository(repo);
 }
 
 #[cfg(test)]
