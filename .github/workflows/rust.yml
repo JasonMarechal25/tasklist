@@ -103,11 +103,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: exe-ubuntu-latest
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: exe-windows-latest
+          pattern: *
 
       - name: Create release
         uses: softprops/action-gh-release@v2
