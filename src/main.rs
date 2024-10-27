@@ -245,6 +245,11 @@ fn delete_task(repo: &mut TaskRepository, task_id: i32) -> Option<Task> {
 fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
     let task = repo.task(id);
     task.description = new_desc;
+    //Check that TASK_FILE is defined
+    if env::var("TASK_FILE").is_err() {
+        //set the TASK_FILE to a default value a temp file
+        env::set_var("TASK_FILE", env::temp_dir().join("task_file.txt"));
+    }
     task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
 }
 
