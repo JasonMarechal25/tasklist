@@ -13,71 +13,90 @@ fn main() -> ExitCode {
         println!("No command provided, goodbye.");
         return ExitCode::from(0);
     }
-    println!(
-        "Reading tasks from {}",
-        &env::var("TASK_FILE").unwrap().to_string()
-    );
-    let mut repo = task_repository::load_repository(&env::var("TASK_FILE").unwrap().to_string());
-    let param1 = &args[1];
-    match param1.as_str() {
-        "list" => {
-            if args.len() == 2 {
-                print_tasks(&repo);
-            } else if args.len() == 3 {
-                match args[2].as_str() {
-                    "todo" => {
-                        print_tasks_by_status(&repo, TaskStatus::Todo);
-                    }
-                    "done" => {
-                        print_tasks_by_status(&repo, TaskStatus::Done);
-                    }
-                    "in-progress" => {
-                        print_tasks_by_status(&repo, TaskStatus::InProgress);
-                    }
-                    &_ => {
-                        println!("Unknown status to display");
-                        return ExitCode::from(1);
-                    }
-                }
-            }
+
+    let task_file = match env::var("TASK_FILE") {
+        Ok(val) => val,
+        Err(_) => {
+            println!("TASK_FILE environment variable not set");
+            return ExitCode::from(1);
         }
-        "add" => {
-            if args.len() < 3 {
-                println!("Missing description to add a new task");
-                return ExitCode::from(1);
-            }
-            add_task(&mut repo, args[2].clone());
-        }
-        "delete" => {
-            if args.len() < 3 {
-                println!("Missing id of task to delete");
-                return ExitCode::from(1);
-            }
-            delete_task(&mut repo, args[2].clone().parse::<i32>().unwrap());
-        }
-        "update" => {
-            if args.len() < 4 {
-                println!("Missing update parameters");
-                return ExitCode::from(1);
-            }
-            update_task(
-                &mut repo,
-                args[2].clone().parse::<i32>().unwrap(),
-                args[3].clone(),
-            );
-        }
-        "mark-in-progress" => {
-            if args.len() < 3 {
-                println!("Missing id of task to progress");
-                return ExitCode::from(1);
-            }
-            mark_in_progress(&mut repo, args[2].clone().parse::<i32>().unwrap());
-        }
-        _ => {
-            println!("Unknown parameter {}", param1)
+    };
+
+    println!("Reading tasks from {}", task_file);
+    let mut repo = task_repository::load_repository(&task_file);
+
+    match handle_command(&args, &mut repo) {
+        Ok(_) => ExitCode::from(0),
+        Err(err) => {
+            println!("{}", err);
+            ExitCode::from(1)
         }
     }
-    ExitCode::from(0)
+}
+
+fn handle_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
+    let param1 = &args[1];
+    match param1.as_str() {
+        "list" => handle_list_command(args, repo),
+        "add" => handle_add_command(args, repo),
+        "delete" => handle_delete_command(args, repo),
+        "update" => handle_update_command(args, repo),
+        "mark-in-progress" => handle_mark_in_progress_command(args, repo),
+        _ => Err(format!("Unknown parameter {}", param1)),
+    }
+}
+
+fn handle_list_command(args: &[String], repo: &TaskRepository) -> Result<(), String> {
+    if args.len() == 2 {
+        print_tasks(repo);
+    } else if args.len() == 3 {
+        match args[2].as_str() {
+            "todo" => print_tasks_by_status(repo, TaskStatus::Todo),
+            "done" => print_tasks_by_status(repo, TaskStatus::Done),
+            "in-progress" => print_tasks_by_status(repo, TaskStatus::InProgress),
+            _ => return Err("Unknown status to display".to_string()),
+        }
+    }
+    Ok(())
+}
+
+fn handle_add_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
+    if args.len() < 3 {
+        return Err("Missing description to add a new task".to_string());
+    }
+    add_task(repo, args[2].clone());
+    Ok(())
+}
+
+fn handle_delete_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
+    if args.len() < 3 {
+        return Err("Missing id of task to delete".to_string());
+    }
+    delete_task(repo, args[2].clone().parse::<i32>().unwrap());
+    Ok(())
+}
+
+fn handle_update_command(args: &[String], repo: &mut TaskRepository) -> Result<(), String> {
+    if args.len() < 4 {
+        return Err("Missing update parameters".to_string());
+    }
+    update_task(
+        repo,
+        args[2].clone().parse::<i32>().unwrap(),
+        args[3].clone(),
+    );
+    Ok(())
+}
+
+fn handle_mark_in_progress_command(
+    args: &[String],
+    repo: &mut TaskRepository,
+) -> Result<(), String> {
+    if args.len() < 3 {
+        return Err("Missing id of task to progress".to_string());
+    }
+    mark_in_progress(repo, args[2].clone().parse::<i32>().unwrap());
+    Ok(())
 }
 
 fn print_tasks_by_status(repo: &TaskRepository, status: TaskStatus) {
