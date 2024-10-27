@@ -39,7 +39,7 @@ jobs:
         rust: [ stable ]
     runs-on: ${{ matrix.os }}
     env:
-      TASK_LIST: "test_file.txt"
+      TASK_FILE: "test_file.txt"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
