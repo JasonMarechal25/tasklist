@@ -252,24 +252,14 @@ fn update_task(repo: &mut TaskRepository, id: i32, new_desc: String) {
 ///
 /// * `repo` - A mutable reference to the `TaskRepository`.
 fn save_repository(repo: &mut TaskRepository) {
-    ensure_file();
-    println!("Saving tasks to {}", env::var("TASK_FILE").unwrap());
-    task_repository::save_repository(repo, &env::var("TASK_FILE").unwrap().to_string());
+    println!("Saving tasks to {}", task_file_name());
+    task_repository::save_repository(repo, &task_file_name());
 }
 
-/// Ensures that the `TASK_FILE` environment variable is set.
-///
-/// If the `TASK_FILE` environment variable is not set, this function sets it to a default
-/// temporary file path and prints a message indicating the new path.
-fn ensure_file() {
-    if env::var("TASK_FILE").is_err() {
-        //set the TASK_FILE to a default value a temp file
-        println!(
-            "TASK_FILE not set, setting to temp file {}",
-            env::temp_dir().join("task_file.txt").to_str().unwrap()
-        );
-        env::set_var("TASK_FILE", env::temp_dir().join("task_file.txt"));
-    }
+/// Computes the name of the file to store tasks in.
+/// The name is read from the `TASK_FILE` environment variable, or defaults to "tasks_file.txt".
+fn task_file_name() -> String {
+    env::var("TASK_FILE").unwrap_or("tasks_file.txt".to_string())
 }
 
 /// Marks a task as in progress.
@@ -289,11 +279,14 @@ mod tests {
     use std::path::Path;
     use tempfile::TempDir;
 
-    #[test]
-    fn task_added() {
-        let mut repo = TaskRepository::default();
+    fn setup() {
         let tmp_dir = TempDir::new().unwrap();
         let _ = env::set_current_dir(&tmp_dir);
+    }
+    #[test]
+    fn task_added() {
+        setup();
+        let mut repo = TaskRepository::default();
         add_task(&mut repo, "TestTask".to_string());
         let task = &repo.task(1);
         assert_eq!(task.description, "TestTask");
@@ -302,6 +295,7 @@ mod tests {
 
     #[test]
     fn task_id_incremental() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task(String::from("TestTask"));
         repo.new_task(String::from("otherTask"));
@@ -312,6 +306,7 @@ mod tests {
 
     #[test]
     fn list_task() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task(String::from("TestTask"));
         repo.new_task(String::from("otherTask"));
@@ -320,6 +315,7 @@ mod tests {
 
     #[test]
     fn delete_task() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task("Plop".to_string());
         repo.new_task("Plip".to_string());
@@ -333,6 +329,7 @@ mod tests {
 
     #[test]
     fn update_task_with_desc_by_id() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task("Plop".to_string());
         repo.new_task("Plip".to_string());
@@ -342,6 +339,7 @@ mod tests {
 
     #[test]
     fn update_inprogress() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task("Plop".to_string());
         mark_in_progress(&mut repo, 1);
@@ -350,6 +348,7 @@ mod tests {
 
     #[test]
     fn save_load_repo() {
+        setup();
         let mut repo = TaskRepository::default();
         repo.new_task("Plop".to_string());
         repo.new_task("Plip".to_string());
