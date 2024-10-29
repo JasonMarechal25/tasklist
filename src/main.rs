@@ -277,10 +277,15 @@ fn mark_in_progress(repo: &mut TaskRepository, id: i32) {
 mod tests {
     use super::*;
     use std::path::Path;
-    use tempfile::TempDir;
+    use tempfile::{Builder, TempDir};
 
     fn setup() {
-        let tmp_dir = TempDir::new().unwrap();
+        let tmp_dir = Builder::new()
+            .prefix("task_list_test")
+            .rand_bytes(10)
+            .keep(true)
+            .tempdir()
+            .unwrap();
         let _ = env::set_current_dir(&tmp_dir);
     }
     #[test]
