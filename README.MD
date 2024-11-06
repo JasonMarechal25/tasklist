@@ -2,6 +2,8 @@
 
 Simple task list management
 
+https://github.com/JasonMarechal25/tasklist/
+
 ## Usage
 
 task-list <command> <args>
